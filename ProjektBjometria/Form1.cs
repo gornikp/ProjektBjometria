@@ -13,6 +13,8 @@ namespace ProjektBjometria
 {
     public partial class Form1 : Form
     {
+        public Bitmap picture { get; set; }
+        public Bitmap thinnedPicture { get; set; }
         public Form1()
         {
             InitializeComponent();
@@ -22,14 +24,20 @@ namespace ProjektBjometria
         {
             int[,] table;
             int[,] table2;
-            Bitmap elo = new Bitmap("C:\\Users\\BuBu\\Desktop\\01.png");
-            PixelFormat eeelo = elo.PixelFormat;
+            //picture = Properties.Resources.odcisk;
+            picture = (Bitmap)pictureBox1.Image;
             ThinningLibrary process = new ThinningLibrary();
-            table = process.BitmapToTable(elo);
+            table = process.BitmapToTable(picture);
             table2 = process.doZhangSuenThinning(table, false);
-            Bitmap elo2;
-            elo2 = process.TableToBitmap(table2);
-            elo2.Save("C:\\Users\\BuBu\\Desktop\\02.png");
+            thinnedPicture = process.TableToBitmap(table2);
+            picture = (Bitmap)thinnedPicture.Clone();
+            PixelFormat eeelo;
+            eeelo = thinnedPicture.PixelFormat;
+            pictureBox1.Image = picture;
+        }
+        private void buttonSavePicture_Click(object sender, EventArgs e)
+        {
+            thinnedPicture.Save("C:\\Users\\BuBu\\Desktop\\02.png");
         }
     }
 }

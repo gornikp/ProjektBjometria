@@ -12,6 +12,7 @@ namespace ProjektBjometria
     {
         private int BinaryValidator(int a)
         {
+            if (a == 255) return 0;
             if (a == 1) return 0;
             if (a == 0) return 1;
             else return 1;
