@@ -41,6 +41,7 @@ namespace ProjektBjometria
             //table = process.BitmapToTable(picture);
             //table2 = process.doZhangSuenThinning(table, false);
             //thinnedPicture = process.TableToBitmap(table2);
+            picture = process.TransformOtsu(picture);
             thinnedPicture = process.processImage((Bitmap)picture.Clone());
             picture = (Bitmap)thinnedPicture.Clone();
             pictureBox1.Image = picture;
@@ -67,19 +68,6 @@ namespace ProjektBjometria
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
-        {
-            int[,] table;
-            int[,] table2;
-            picture = Properties.Resources.odcisk;
-            picture = (Bitmap)pictureBox1.Image;
-            ThinningLibrary process = new ThinningLibrary();
-            table = process.BitmapToTable(picture);
-            table2 = process.doZhangSuenThinning(table, false);
-            thinnedPicture = process.TableToBitmap(table2);          
-            picture = (Bitmap)thinnedPicture.Clone();          
-            pictureBox1.Image = picture;
-        }
 
         private void button3_Click(object sender, EventArgs e)
         {

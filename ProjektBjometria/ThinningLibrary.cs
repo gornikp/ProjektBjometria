@@ -23,169 +23,100 @@ namespace ProjektBjometria
             if (a != 0) return 0;
             else return 255;
         }
-        public int[,] BitmapToTable(Bitmap inputBitmap)
+        private Bitmap ApplyThreshold(Bitmap inputBitmap, int threshold)
         {
             CustomBitmapProcessing data = new CustomBitmapProcessing(inputBitmap);
             data.LockBits();
-            int[,] outputTab = new int[data.Height, data.Width];
-            for (int y = 0; y < data.Height; y++)
+            for (int i = 0; i < data.Height; i++)
             {
-                for (int x = 0; x < data.Width; x++)
+                for (int j = 0; j < data.Width; j++)
                 {
-                    int rgb = data.GetPixel(60, 50);
-                    rgb = data.GetPixel(y, x);
-                    outputTab[y, x] = BinaryValidator(rgb & 0xFF);
+                    if ((data.GetPixel(i, j) & 0xFF) >= threshold)
+                    {
+                        int rgb = 255 + (255 << 8) + (255 << 16);
+                        data.SetPixel(i, j, rgb);
+                    }
+                    else
+                    {
+                        data.SetPixel(i, j, 0);
+                    }
                 }
             }
             data.UnlockBits();
-            return outputTab;
+            return inputBitmap;
         }
-        public Bitmap TableToBitmap(int[,] inputTabe)
+        private ulong[] CreateHistogram(Bitmap inputBitmap)
         {
-            Bitmap newBitmap = new Bitmap(inputTabe.GetLength(1), inputTabe.GetLength(0),PixelFormat.Format8bppIndexed);
-            CustomBitmapProcessing data = new CustomBitmapProcessing(newBitmap);
-            data.LockBits();          
-            for (int y = 0; y < data.Height; y++)
+            ulong[] histogram = new ulong[256];
+            CustomBitmapProcessing data = new CustomBitmapProcessing(inputBitmap);
+            data.LockBits();
+            for (int i = 0; i < data.Height; i++)
             {
-                for (int x = 0; x < data.Width; x++)
+                for (int j = 0; j < data.Width; j++)
                 {
-                    int rgb = BinaryValidator2(inputTabe[y, x]) + (BinaryValidator2(inputTabe[y, x]) << 8) + (BinaryValidator2(inputTabe[y, x]) << 16);
-                    data.SetPixel(y, x, rgb);
+                    int gray = (data.GetPixel(i, j) & 0xFF);
+                    histogram[gray]++;
                 }
             }
             data.UnlockBits();
-            return newBitmap;
+            return histogram;
         }
-        public int[,] doZhangSuenThinning(int[,] givenImage, bool changeGivenImage)
+        private Bitmap ApplyGrayScale(Bitmap inputBitmap)
         {
-            Bitmap elo = new Bitmap(100, 100, PixelFormat.Format1bppIndexed);
-            int[,] binaryImage;
-            if (changeGivenImage)
+            CustomBitmapProcessing data = new CustomBitmapProcessing(inputBitmap);
+            data.LockBits();
+            for (int i = 0; i < data.Height; i++)
             {
-                binaryImage = givenImage;
+                for (int j = 0; j < data.Width; j++)
+                {
+                    int rgb = data.GetPixel(i, j);
+                    byte grey = (byte)(Math.Ceiling((decimal)(0.299 * (rgb & 0xFF) + 0.587 * ((rgb >> 8) & 0xFF) + 0.114 * ((rgb >> 16) & 0xFF))));
+                    int rgbOut = grey + (grey << 8) + (grey << 16);
+                    data.SetPixel(i, j, rgbOut);
+                }
             }
-            else
-            {
-                binaryImage = (int[,])givenImage.Clone();
-            }
-            int a, b;
-            List<Point> pointsToChange = new List<Point>();
-            bool hasChange;
-            int Width = binaryImage.GetLength(1);
-            int Height = binaryImage.GetLength(0);
-            do
-            {
-                hasChange = false;
-                for (int y = 1; y + 1 <Height; y++)
-                {
-                    for (int x = 1; x + 1 < Width; x++)
-                    {
-                        a = getA(binaryImage, y, x);
-                        b = getB(binaryImage, y, x);
-                        if (binaryImage[y,x] == 1 && 2 <= b && b <= 6 && a == 1
-                                && (binaryImage[y - 1,x] * binaryImage[y,x + 1] * binaryImage[y + 1,x] == 0)
-                                && (binaryImage[y,x + 1] * binaryImage[y + 1,x] * binaryImage[y,x - 1] == 0))
-                        {
-                            pointsToChange.Add(new Point(x, y));
-                            //binaryImage[y][x] = 0;
-                            hasChange = true;
-                        }
-                    }
-                }
-                foreach (Point point in pointsToChange)
-                {
-                    binaryImage[point.Y,point.X] = 0;
-                }
-                pointsToChange.Clear();
-                for (int y = 1; y + 1 < Height; y++)
-                {
-                    for (int x = 1; x + 1 < Width; x++)
-                    {
-                        a = getA(binaryImage, y, x);
-                        b = getB(binaryImage, y, x);
-                        if (binaryImage[y,x] == 1 && 2 <= b && b <= 6 && a == 1
-                                && (binaryImage[y - 1,x] * binaryImage[y,x + 1] * binaryImage[y,x - 1] == 0)
-                                && (binaryImage[y - 1,x] * binaryImage[y + 1,x] * binaryImage[y,x - 1] == 0))
-                        {
-                            pointsToChange.Add(new Point(x, y));
-                            hasChange = true;
-                        }
-                    }
-                }
-                foreach (Point point in pointsToChange)
-                {
-                    binaryImage[point.Y,point.X] = 0;
-                }
-                pointsToChange.Clear();
-            } while (hasChange);
-            return binaryImage;
+            data.UnlockBits();
+            return inputBitmap;
         }
-
-        private int getA(int[,] binaryImage, int y, int x)
+        public Bitmap TransformOtsu(Bitmap inputBitmap)
         {
-            int Width = binaryImage.GetLength(1);
-            int Height = binaryImage.GetLength(0);
-            int count = 0;
-            //p2 p3
-            if (y - 1 >= 0 && x + 1 < binaryImage.GetLength(1) && binaryImage[y - 1,x] == 0 && binaryImage[y - 1,x + 1] == 1)
+            Bitmap renderedImage = ApplyGrayScale(inputBitmap);
+            ulong[] histogram = CreateHistogram(renderedImage);
+            double[] variancies = new double[256];
+            for (uint group = 0; group < 256; group++)
             {
-                count++;
-            }
-            //p3 p4
-            if (y - 1 >= 0 && x + 1 < binaryImage.GetLength(1) && binaryImage[y - 1,x + 1] == 0 && binaryImage[y,x + 1] == 1)
-            {
-                count++;
-            }
-            //p4 p5
-            if (y + 1 < binaryImage.GetLength(0) && x + 1 < binaryImage.GetLength(1) && binaryImage[y,x + 1] == 0 && binaryImage[y + 1,x + 1] == 1)
-            {
-                count++;
-            }
-            //p5 p6
-            if (y + 1 < binaryImage.GetLength(0) && x + 1 < binaryImage.GetLength(1) && binaryImage[y + 1,x + 1] == 0 && binaryImage[y + 1,x] == 1)
-            {
-                count++;
-            }
-            //p6 p7
-            if (y + 1 < binaryImage.GetLength(0) && x - 1 >= 0 && binaryImage[y + 1,x] == 0 && binaryImage[y + 1,x - 1] == 1)
-            {
-                count++;
-            }
-            //p7 p8
-            if (y + 1 < binaryImage.GetLength(0) && x - 1 >= 0 && binaryImage[y + 1,x - 1] == 0 && binaryImage[y,x - 1] == 1)
-            {
-                count++;
-            }
-            //p8 p9
-            if (y - 1 >= 0 && x - 1 >= 0 && binaryImage[y,x - 1] == 0 && binaryImage[y - 1,x - 1] == 1)
-            {
-                count++;
-            }
-            //p9 p2
-            if (y - 1 >= 0 && x - 1 >= 0 && binaryImage[y - 1,x - 1] == 0 && binaryImage[y - 1,x] == 1)
-            {
-                count++;
-            }
-            return count;
-        }
+                double objectDepth = 0, backgrDepth = 0;
+                for (uint i = 0; i < group; i++)
+                {
+                    objectDepth += histogram[i];
+                }
+                for (uint i = group; i < 256; i++)
+                {
+                    backgrDepth += histogram[i];
+                }
+                double objectMiddleDepth = 0, backgrMiddleDepth = 0;
+                for (uint i = 0; i < group; i++)
+                {
+                    objectMiddleDepth += (histogram[i] * i) / objectDepth;
+                }
+                for (uint i = group; i < 256; i++)
+                {
+                    backgrMiddleDepth += (histogram[i] * i) / backgrDepth;
+                }
 
-        private int getB(int[,] binaryImage, int y, int x)
-        {
-            int Width = binaryImage.GetLength(1);
-            int Height = binaryImage.GetLength(0);
-            return binaryImage[y - 1,x] + binaryImage[y - 1,x + 1] + binaryImage[y,x + 1]
-                    + binaryImage[y + 1,x + 1] + binaryImage[y + 1,x] + binaryImage[y + 1,x - 1]
-                    + binaryImage[y,x - 1] + binaryImage[y - 1,x - 1];
+                variancies[group] = Math.Sqrt(objectDepth * backgrDepth * Math.Pow(objectMiddleDepth - backgrMiddleDepth, 2));
+            }
+            int boundary = Array.IndexOf(variancies, variancies.Max());
+            return ApplyThreshold(renderedImage, boundary);
         }
-
         private Bitmap originalImage;
         private Bitmap filteredImage;
-    
+
         int[,] imageM;
         int width;
         int height;
 
- 
+
         public Bitmap processImage(Bitmap image)
         {
             originalImage = (Bitmap)image.Clone();
@@ -197,7 +128,7 @@ namespace ProjektBjometria
             data.LockBits();
             dataOut.LockBits();
 
-            imageM = new int[height,width];
+            imageM = new int[height, width];
 
             for (int i = 0; i < height; i++)
             {
@@ -211,13 +142,13 @@ namespace ProjektBjometria
             while (true)
             {
 
-                int[,] start = new int[height,width];
+                int[,] start = new int[height, width];
 
                 for (int i = 0; i < height; i++)
                 {
                     for (int j = 0; j < width; j++)
                     {
-                        start[i,j] = imageM[i,j];
+                        start[i, j] = imageM[i, j];
                     }
                 }
 
@@ -229,7 +160,7 @@ namespace ProjektBjometria
                 {
                     for (int j = 0; j < width; j++)
                     {
-                        if (start[i,j] != imageM[i,j])
+                        if (start[i, j] != imageM[i, j])
                         {
                             same = false;
                             //break;
@@ -251,7 +182,7 @@ namespace ProjektBjometria
                 for (int j = 0; j < width; j++)
                 {
                     int col;
-                    col = BinaryValidator2(imageM[i, j]);                 
+                    col = BinaryValidator2(imageM[i, j]);
                     int rgb = col + (col << 8) + (col << 16);
                     dataOut.SetPixel(i, j, rgb);
                 }
@@ -263,21 +194,21 @@ namespace ProjektBjometria
 
         public void thiningIteration(int iter)
         {
-            int[,] marker = new int[height,width];
+            int[,] marker = new int[height, width];
 
             for (int i = 1; i < height - 1; i++)
             {
                 for (int j = 1; j < width - 1; j++)
                 {
 
-                    int p2 = imageM[i - 1,j];
-                    int p3 = imageM[i - 1,j + 1];
-                    int p4 = imageM[i,j + 1];
-                    int p5 = imageM[i + 1,j + 1];
-                    int p6 = imageM[i + 1,j];
-                    int p7 = imageM[i + 1,j - 1];
-                    int p8 = imageM[i,j - 1];
-                    int p9 = imageM[i - 1,j - 1];
+                    int p2 = imageM[i - 1, j];
+                    int p3 = imageM[i - 1, j + 1];
+                    int p4 = imageM[i, j + 1];
+                    int p5 = imageM[i + 1, j + 1];
+                    int p6 = imageM[i + 1, j];
+                    int p7 = imageM[i + 1, j - 1];
+                    int p8 = imageM[i, j - 1];
+                    int p9 = imageM[i - 1, j - 1];
                     int c1 = 0; //p2 == 0 && p3 == 1
                     int c2 = 0; //p3 == 0 && p4 == 1
                     int c3 = 0; //p4 == 0 && p5 == 1
@@ -328,7 +259,7 @@ namespace ProjektBjometria
 
                     if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
                     {
-                        marker[i,j] = 1;
+                        marker[i, j] = 1;
                     }
 
                 }
@@ -339,19 +270,80 @@ namespace ProjektBjometria
                 for (int j = 0; j < width; j++)
                 {
 
-                    int tmp = 1 - marker[i,j];
-                    if (imageM[i,j] == tmp && imageM[i,j] == 1)
+                    int tmp = 1 - marker[i, j];
+                    if (imageM[i, j] == tmp && imageM[i, j] == 1)
                     {
-                        imageM[i,j] = 1;
+                        imageM[i, j] = 1;
                     }
                     else
                     {
-                        imageM[i,j] = 0;
+                        imageM[i, j] = 0;
                     }
 
                 }
             }
 
         }
+
+
+        int[,] N = { { 32, 64, 128 }, { 16, 0, 1 }, { 8, 4, 2 } };
+        int[] A0 = { 3, 6, 7, 12, 14, 15, 24, 28, 30, 31, 48, 56, 60, 62, 63, 96, 112, 120, 124, 126, 127, 129, 131, 135, 143, 159, 191, 192, 193, 195, 199, 207, 223, 224, 225, 227, 231, 239, 240, 241, 243, 247, 248, 249, 251, 252, 253, 254 };
+        int[] A1 = { 7, 14, 28, 56, 112, 131, 193, 224 };
+        int[] A2 = { 7, 14, 15, 28, 30, 56, 60, 112, 120, 131, 135, 193, 195, 224, 225, 240 };
+        int[] A3 = { 7, 14, 15, 28, 30, 31, 56, 60, 62, 112, 120, 124, 131, 135, 143, 193, 195, 199, 224, 225, 227, 240, 241, 248 };
+        int[] A4 = { 7, 14, 15, 28, 30, 31, 56, 60, 62, 63, 112, 120, 124, 126, 131, 135, 143, 159, 193, 195, 199, 207, 224, 225, 227, 231, 240, 241, 243, 248, 249, 252 };
+        int[] A5 = { 7, 14, 15, 28, 30, 31, 56, 60, 62, 63, 112, 120, 124, 126, 131, 135, 143, 159, 191, 193, 195, 199, 207, 224, 225, 227, 231, 239, 240, 241, 243, 248, 249, 251, 252, 254 };
+        int[] A1pix = { 3, 6, 7, 12, 14, 15, 24, 28, 30, 31, 48, 56, 60, 62, 63, 96, 112, 120, 124, 126, 127, 129, 131, 135, 143, 159, 191, 192, 193, 195, 199, 207, 223, 224, 225, 227, 231, 239, 240, 241, 243, 247, 248, 249, 251, 252, 253, 254 };
+
+        private Bitmap Thinner(Bitmap inputImage, int[] weights)
+        {
+            for (int x = 1; x < inputImage.Height - 1; x++)
+            {
+                for (int y = 0; y < inputImage.Width - 1; y++)
+                {
+                    int weight = 0;
+                    for (int i = -1; i < 2; i++)
+                    {
+                        for (int j = -1; j < 2; j++)
+                        {
+                            weight += N[i + 1, j + 1] * BinaryValidator(inputImage.GetPixel(x + i, y + j).B);
+                        }
+                    }
+                    if (weights.Contains(weight))
+                    {
+                        inputImage.SetPixel(x, y, Color.Black);
+                    }
+                }
+            }
+            return inputImage;
+        }
+
+        private int[,] Border(Bitmap inputImage, int[] weights)
+        {
+            int[,] B = new int[inputImage.Height, inputImage.Width];
+            for (int x = 1; x < inputImage.Height; x++)
+            {
+                for (int y = 1; y < inputImage.Width; y++)
+                {
+                    int bit = BinaryValidator(inputImage.GetPixel(x, y).R);
+                    if (bit == 0) continue;
+                    int weight = 0;
+                    for (int i = -1; i < 2; i++)
+                    {
+                        for (int j = -1; j < 2; j++)
+                        {
+                            weight += N[i + 1, j + 1] * BinaryValidator(inputImage.GetPixel(x+i, y+j).R);
+                        }
+                    }
+                    if (weights.Contains(weight))
+                    {
+                        B[x, y] = 1;
+                    }
+                }
+            }
+
+            return B;
+        }
+
     }
 }
