@@ -39,5 +39,13 @@ namespace ProjektBjometria
         {
             thinnedPicture.Save("C:\\Users\\BuBu\\Desktop\\02.png");
         }
+
+        private void button2_Click_1(object sender, EventArgs e)
+        {
+            MinutiaFinder minutiaFinder = new MinutiaFinder(picture);
+            minutiaFinder.findCrosscuts();
+            picture = minutiaFinder.result;
+            pictureBox1.Image = picture;
+        }
     }
 }

@@ -30,10 +30,11 @@
         {
             this.button1 = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.buttonSavePicture = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.buttonSavePicture = new System.Windows.Forms.Button();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.button2 = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -41,17 +42,18 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(19, 15);
+            this.button1.Location = new System.Drawing.Point(12, 15);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.Size = new System.Drawing.Size(82, 23);
             this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
+            this.button1.Text = "Szkieletyzacja";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.panel1.Controls.Add(this.button2);
             this.panel1.Controls.Add(this.buttonSavePicture);
             this.panel1.Controls.Add(this.button1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Left;
@@ -59,6 +61,16 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(110, 382);
             this.panel1.TabIndex = 1;
+            // 
+            // buttonSavePicture
+            // 
+            this.buttonSavePicture.Location = new System.Drawing.Point(19, 84);
+            this.buttonSavePicture.Name = "buttonSavePicture";
+            this.buttonSavePicture.Size = new System.Drawing.Size(75, 23);
+            this.buttonSavePicture.TabIndex = 1;
+            this.buttonSavePicture.Text = "Zapisz";
+            this.buttonSavePicture.UseVisualStyleBackColor = true;
+            this.buttonSavePicture.Click += new System.EventHandler(this.buttonSavePicture_Click);
             // 
             // panel2
             // 
@@ -80,16 +92,16 @@
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
             // 
-            // buttonSavePicture
+            // button2
             // 
-            this.buttonSavePicture.Location = new System.Drawing.Point(19, 84);
-            this.buttonSavePicture.Name = "buttonSavePicture";
-            this.buttonSavePicture.Size = new System.Drawing.Size(75, 23);
-            this.buttonSavePicture.TabIndex = 1;
-            this.buttonSavePicture.Text = "Zapisz";
-            this.buttonSavePicture.UseVisualStyleBackColor = true;
-            this.buttonSavePicture.Click += new System.EventHandler(this.buttonSavePicture_Click);
-            //          
+            this.button2.Location = new System.Drawing.Point(21, 50);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(72, 20);
+            this.button2.TabIndex = 2;
+            this.button2.Text = "Minucje";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click_1);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -114,6 +126,7 @@
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button buttonSavePicture;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.Button button2;
     }
 }
 
