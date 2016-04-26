@@ -38,6 +38,7 @@ public class MinutiaFinder
                     if (isBlack(x, y))
                     {
                         checkTestFields(x, y);
+                        checkTestEndings(x, y);
                     }
                 }
                 
@@ -189,4 +190,109 @@ public class MinutiaFinder
     {
         return envX >= 0 && envY >= 0 && envX < imgWidth && envY < imgHeight;
     }
+
+    ////////Zakończenia
+
+    private void checkTestEndings(int x, int y)
+    {
+        checkEndings(x, y);
+        if (isEnding())
+        {
+            markEndings(x, y);
+            minutiaCounter++;
+            return;
+        }
+        result.SetPixel(x, y, bitmap.GetPixel(x, y));
+    }
+
+    private void markEndings(int x, int y)
+    {
+        int envX, envY;
+        int fieldWidth = 9;
+        int counterDir = 4;
+        int counter = 0;
+        markPixelIfExistsEndings(x, y, false);
+
+        for (envX = x - counterDir, envY = y - counterDir; counter < fieldWidth; counter++, envY++)
+        {
+            markPixelIfExistsEndings(envX, envY, true);
+        }
+
+        counter = 0;
+
+        for (envX = x + counterDir, envY = y - counterDir; counter < fieldWidth; counter++, envY++)
+        {
+            markPixelIfExistsEndings(envX, envY, true);
+        }
+
+        counter = 0;
+
+        for (envX = x - counterDir + 1, envY = y - counterDir; counter < (fieldWidth - 2);
+            counter++, envX++)
+        {
+            markPixelIfExistsEndings(envX, envY, true);
+        }
+
+        counter = 0;
+
+        for (envX = x - counterDir + 1, envY = y + counterDir; counter < (fieldWidth - 2);
+           counter++, envX++)
+        {
+            markPixelIfExistsEndings(envX, envY, true);
+        }
+
+        //int counterX = 0, counterY = 0;
+        //for (envX = x - 3; counterX < 7; envX++, counterX++)
+        //{
+        //    for (envY = y - 3, counterY = 0; counterY < 7; envY++, counterY++)
+        //    {
+        //        markPixelIfExistsEndings(envX, envY, false);
+        //    }
+        //}
+    }
+    private void markPixelIfExistsEndings(int envX, int envY, Boolean setPixel)
+    {
+        if (isPixelExists(envX, envY))
+        {
+            isPixelSet[envX, envY] = true;
+            if (setPixel)
+            {
+                result.SetPixel(envX, envY, Color.FromArgb(0, 0, 255));
+            }
+        }
+    }
+
+    private bool isEnding()
+    {
+        return blackPointCounter == 1;
+    }
+
+    private void checkEndings(int x, int y)
+    {
+        int envX, envY;
+        int counter = 0;
+
+
+
+        for (envX = x - 1, envY = y - 1; counter < 3; counter++, envY++)
+        {
+            incrementCounterIfPixelIsCorrect(envX, envY);
+        }
+        counter = 0;
+
+        for (envX = x + 1, envY = y - 1; counter < 3; counter++, envY++)
+        {
+            incrementCounterIfPixelIsCorrect(envX, envY);
+        }
+        counter = 0;
+
+        incrementCounterIfPixelIsCorrect(envX = x, envY = y - 1);
+
+
+        incrementCounterIfPixelIsCorrect(envX = x, envY = y + 1);
+
+    }
+
+
+
 }
