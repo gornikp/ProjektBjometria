@@ -120,6 +120,10 @@ public class MinutiaFinder
             {
                 result.SetPixel(envX, envY, Color.FromArgb(255, 0, 0));
             }
+            else
+            {
+                result.SetPixel(envX, envY, bitmap.GetPixel(envX, envY));
+            }
         }
     }
 
