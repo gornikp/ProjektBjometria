@@ -6,7 +6,7 @@ using System.Drawing;
 public class MinutiaFinder
 {
     private Bitmap bitmap;
-    public Bitmap result { get; }
+    public Bitmap result { get; set; }
     private CustomBitmapProcessing processing;
     private int imgWidth;
     private int imgHeight;
@@ -38,6 +38,7 @@ public class MinutiaFinder
                     if (isBlack(x, y))
                     {
                         checkTestFields(x, y);
+                        blackPointCounter = 0;
                         checkTestEndings(x, y);
                     }
                 }
