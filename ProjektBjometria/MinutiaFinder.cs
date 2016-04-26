@@ -13,6 +13,7 @@ public class MinutiaFinder
     private int blackPointCounter;
     private List<Point[]> minutias;
     private bool[,] isPixelSet;
+    private int minutiaCounter = 0;
 
     public MinutiaFinder(Bitmap bitmap)
     {
@@ -42,6 +43,7 @@ public class MinutiaFinder
                 
             }
         }
+        Console.WriteLine("MinutiaCounter: " + minutiaCounter);
     }
 
     private void checkTestFields(int x, int y)
@@ -54,6 +56,7 @@ public class MinutiaFinder
             if (isCrosscut())
             {
                 markMinutia(x, y);
+                minutiaCounter++;
                 return;
             }
         }
@@ -68,18 +71,18 @@ public class MinutiaFinder
         int fieldWidth = 9;
         int counterDir = 4;
         int counter = 0;
-        markPixelIfExists(x, y, x, y);
+        markPixelIfExists(x, y, false);
 
         for (envX = x - counterDir, envY = y - counterDir; counter < fieldWidth; counter++, envY++)
         {
-            markPixelIfExists(x, y, envX, envY);
+            markPixelIfExists(envX, envY, true);
         }
 
         counter = 0;
 
         for (envX = x + counterDir, envY = y - counterDir; counter < fieldWidth; counter++, envY++)
         {
-            markPixelIfExists(x, y, envX, envY);
+            markPixelIfExists(envX, envY, true);
         }
 
         counter = 0;
@@ -87,7 +90,7 @@ public class MinutiaFinder
         for (envX = x - counterDir + 1, envY = y - counterDir; counter < (fieldWidth - 2);
             counter++, envX++)
         {
-            markPixelIfExists(x, y, envX, envY);
+            markPixelIfExists(envX, envY, true);
         }
 
         counter = 0;
@@ -95,16 +98,28 @@ public class MinutiaFinder
         for (envX = x - counterDir + 1, envY = y + counterDir; counter < (fieldWidth - 2);
            counter++, envX++)
         {
-            markPixelIfExists(x, y, envX, envY);
+            markPixelIfExists(envX, envY, true);
+        }
+
+        int counterX = 0, counterY = 0;
+        for (envX = x - 3; counterX < 7; envX++, counterX++)
+        {
+            for (envY = y - 3, counterY = 0; counterY < 7; envY++, counterY++)
+            {
+                markPixelIfExists(envX, envY, false);
+            }
         }
     }
 
-    private void markPixelIfExists(int x, int y, int envX, int envY)
+    private void markPixelIfExists(int envX, int envY, Boolean setPixel)
     {
         if (isPixelExists(envX, envY))
         {
-            result.SetPixel(envX, envY, Color.FromArgb(255, 0, 0));
             isPixelSet[envX, envY] = true;
+            if (setPixel)
+            {
+                result.SetPixel(envX, envY, Color.FromArgb(255, 0, 0));
+            }
         }
     }
 
