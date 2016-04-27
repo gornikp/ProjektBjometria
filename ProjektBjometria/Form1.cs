@@ -15,6 +15,7 @@ namespace ProjektBjometria
 {
     public partial class Form1 : Form
     {
+        int zoom { get; set; }
         public Bitmap Picture {
             get
             {
@@ -23,13 +24,14 @@ namespace ProjektBjometria
             set
             {
                 picture = value;
-                pictureBox1.Image = picture;
             }
         }
         private Bitmap picture;
         public Bitmap thinnedPicture { get; set; }
         public Form1()
         {
+            zoom = 1;
+            picture = Properties.Resources.odcisk;
             InitializeComponent();
         }
 
@@ -48,7 +50,7 @@ namespace ProjektBjometria
         }
         private void buttonSavePicture_Click(object sender, EventArgs e)
         {
-            thinnedPicture.Save("C:\\Users\\Monika\\Documents\\STUDIA\\sem6\\Podstawy biometrii\\odcisk.jpg");
+            picture.Save("C:\\Users\\Monika\\Documents\\STUDIA\\sem6\\Podstawy biometrii\\odcisk.jpg");
         }
 
         private void button2_Click_1(object sender, EventArgs e)
@@ -79,6 +81,20 @@ namespace ProjektBjometria
         private void button3_Click(object sender, EventArgs e)
         {
             
+        }
+
+        private void button3_Click_1(object sender, EventArgs e)
+        {
+            if (zoom == 1)
+            {
+                zoom = 6;
+                pictureBox1.Image = new Bitmap(picture, picture.Width * zoom, picture.Height * zoom);
+            }
+            else
+            {
+                zoom = 1;
+                pictureBox1.Image = new Bitmap(picture, picture.Width * zoom, picture.Height * zoom);
+            }
         }
     }
 }

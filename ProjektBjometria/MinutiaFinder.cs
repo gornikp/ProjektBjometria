@@ -11,7 +11,8 @@ public class MinutiaFinder
     private int imgWidth;
     private int imgHeight;
     private int blackPointCounter;
-    private List<Point[]> minutias;
+    private List<Point> crosscuts;
+    private List<Point> endings;
     private bool[,] isPixelSet;
     private int minutiaCounter = 0;
 
@@ -22,7 +23,8 @@ public class MinutiaFinder
         this.imgHeight = bitmap.Height;
         this.imgWidth = bitmap.Width;
         this.isPixelSet = new bool[imgWidth, imgHeight];
-        this.minutias = new List<Point[]>();
+        this.crosscuts = new List<Point>();
+        this.endings = new List<Point>();
         this.result = new Bitmap(imgWidth, imgHeight);
     }
 
@@ -33,19 +35,67 @@ public class MinutiaFinder
             for (int y = 0; y < imgHeight; y++)
             {
                 blackPointCounter = 0;
-                if (!isPixelSet[x, y])
+                if (isBlack(x, y))
                 {
-                    if (isBlack(x, y))
-                    {
-                        checkTestFields(x, y);
-                        blackPointCounter = 0;
-                        checkTestEndings(x, y);
-                    }
+                    checkTestFields(x, y);
+                    blackPointCounter = 0;
+                    checkTestEndings(x, y);
                 }
-                
+                result.SetPixel(x, y, bitmap.GetPixel(x, y));
             }
         }
+        filterMinutias();
+        markAllEndings();
         Console.WriteLine("MinutiaCounter: " + minutiaCounter);
+    }
+
+    private void markAllEndings()
+    {
+        int size = endings.Count;
+
+        for (int i = 0; i < endings.Count; i++)
+        {
+            Point p = endings[i];
+
+            markEndings(p.X, p.Y);
+        }
+    }
+
+    private void filterMinutias()
+    {
+        int size = crosscuts.Count;
+        for (int i = 0; i < crosscuts.Count; i++)
+        {
+            Point firstPoint = crosscuts[i];
+            for (int j = 0; j < crosscuts.Count; j++)
+            {
+                Point secondPoint = crosscuts[j];
+                if (!firstPoint.Equals(secondPoint))
+                {
+                    double distance = countDistance(firstPoint, secondPoint);
+                    if (distance < 16)
+                    {
+                        crosscuts.Remove(secondPoint);
+                    }
+                }
+            }
+        }
+
+        foreach (Point point in crosscuts)
+        {
+            markCrosscut(point.X, point.Y);
+        }
+    }
+
+    private double countDistance(Point firstPoint, Point secondPoint)
+    {
+        double distance = 0;
+        double xPart = Math.Pow(secondPoint.X - firstPoint.X, 2);
+        double yPart = Math.Pow(secondPoint.Y - firstPoint.Y, 2);
+
+        distance = Math.Abs(Math.Sqrt(xPart + yPart));
+
+        return distance;
     }
 
     private void checkTestFields(int x, int y)
@@ -57,17 +107,14 @@ public class MinutiaFinder
 
             if (isCrosscut())
             {
-                markMinutia(x, y);
+                crosscuts.Add(new Point(x, y));
                 minutiaCounter++;
                 return;
             }
         }
-        
-        result.SetPixel(x, y, bitmap.GetPixel(x, y));
-        
     }
 
-    private void markMinutia(int x, int y)
+    private void markCrosscut(int x, int y)
     {
         int envX, envY;
         int fieldWidth = 9;
@@ -131,7 +178,7 @@ public class MinutiaFinder
 
     private bool isCrosscut()
     {
-        return blackPointCounter == 3;
+        return blackPointCounter >= 3;
     }
 
     private void checkTestField(int x, int y, int fieldWidth)
@@ -201,7 +248,8 @@ public class MinutiaFinder
         {
             if (filterEndings(x, y))
             {
-                markEndings(x, y);
+                //markEndings(x, y);
+                endings.Add(new Point(x, y));
                 minutiaCounter++;
                 return;
             }
