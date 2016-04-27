@@ -50,7 +50,7 @@ namespace ProjektBjometria
         }
         private void buttonSavePicture_Click(object sender, EventArgs e)
         {
-            thinnedPicture.Save("C:\\Users\\Monika\\Documents\\STUDIA\\sem6\\Podstawy biometrii\\odcisk.jpg");
+            picture.Save("C:\\Users\\Monika\\Documents\\STUDIA\\sem6\\Podstawy biometrii\\odcisk.jpg");
         }
 
         private void button2_Click_1(object sender, EventArgs e)
