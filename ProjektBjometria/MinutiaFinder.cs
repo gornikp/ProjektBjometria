@@ -199,12 +199,43 @@ public class MinutiaFinder
         checkEndings(x, y);
         if (isEnding())
         {
-            markEndings(x, y);
-            minutiaCounter++;
-            return;
+            if (filterEndings(x, y))
+            {
+                markEndings(x, y);
+                minutiaCounter++;
+                return;
+            }
         }
         result.SetPixel(x, y, bitmap.GetPixel(x, y));
     }
+
+    private bool isWhite(int x, int y)
+    {
+        Color color = this.bitmap.GetPixel(x, y);
+        return color.R == 255 && color.G == 255 && color.B == 255;
+    }
+
+    private bool filterEndings(int x, int y)
+    {
+        int counter = 0,counter2 = 0;
+        for(int i = x; i<imgWidth; i++){
+            if(isWhite(i,y)){
+                counter++;
+                }
+            }
+        for(int i = x; i>=0; i--){
+            if(isWhite(i,y)){
+                counter2++;
+                }
+
+            }
+        if (counter2 == x || counter == (imgWidth -x-1))
+        {
+            return false;
+        }
+        else return true;
+        }
+       
 
     private void markEndings(int x, int y)
     {
