@@ -55,9 +55,8 @@ namespace ProjektBjometria
 
         private void button2_Click_1(object sender, EventArgs e)
         {
-            MinutiaFinder minutiaFinder = new MinutiaFinder(picture);
-            minutiaFinder.findCrosscuts();
-            picture = minutiaFinder.result;
+            MinutiaManager manager = new MinutiaManager(picture);
+            picture = manager.findAndMarkMinutias();
             pictureBox1.Image = picture;
         }
         private void pictureBox1_DragEnter(object sender, DragEventArgs e)
@@ -70,6 +69,7 @@ namespace ProjektBjometria
             try
             {
                 Picture = new Bitmap(((string[])e.Data.GetData(DataFormats.FileDrop, false))[0]);
+                pictureBox1.Image = picture;
             }
             catch (Exception ex)
             {
@@ -77,17 +77,25 @@ namespace ProjektBjometria
             }
         }
 
-
-        private void button3_Click(object sender, EventArgs e)
+        private void zoomIn(object sender, EventArgs e)
         {
-            
+            if (zoom >= 1)
+            {
+                zoom *= 2;
+                pictureBox1.Image = new Bitmap(picture, picture.Width * zoom, picture.Height * zoom);
+            }
+            else
+            {
+                zoom = 1;
+                pictureBox1.Image = new Bitmap(picture, picture.Width * zoom, picture.Height * zoom);
+            }
         }
 
-        private void button3_Click_1(object sender, EventArgs e)
+        private void zoomOut(object sender, EventArgs e)
         {
-            if (zoom == 1)
+            if (zoom > 1)
             {
-                zoom = 6;
+                zoom /= 2;
                 pictureBox1.Image = new Bitmap(picture, picture.Width * zoom, picture.Height * zoom);
             }
             else

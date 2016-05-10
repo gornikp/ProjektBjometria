@@ -5,130 +5,103 @@ using System.Drawing;
 
 namespace ProjektBjometria
 {
-    public class MinutiaFinder
+    public class MinutiaManager
     {
-        private Bitmap bitmap;
-        public Bitmap result { get; set; }
-        private int imgWidth;
-        private int imgHeight;
-        private int blackPointCounter;
-        private List<Point> crosscuts;
-        private List<Point> endings;
-        private bool[,] isPixelSet;
-        private int minutiaCounter = 0;
-        private Color neighbour;
+        private CrosscutFinder crosscutFinder;
+        private EndingFinder endingFinder;
 
-        public MinutiaFinder(Bitmap bitmap)
+        private Bitmap bitmap;
+
+        private int imgWidth, imgHeight;
+        
+
+        public MinutiaManager(Bitmap bitmap)
         {
             this.bitmap = bitmap;
             this.imgHeight = bitmap.Height;
             this.imgWidth = bitmap.Width;
-            this.isPixelSet = new bool[imgWidth, imgHeight];
-            this.crosscuts = new List<Point>();
-            this.endings = new List<Point>();
-            this.result = new Bitmap(imgWidth, imgHeight);
+            this.crosscutFinder = new CrosscutFinder(bitmap);
+            this.endingFinder = new EndingFinder(bitmap);
         }
 
-        public void findCrosscuts()
+        public Bitmap findAndMarkMinutias()
         {
+            Bitmap result = new Bitmap(imgWidth, imgHeight);
             for (int x = 0; x < imgWidth; x++)
             {
                 for (int y = 0; y < imgHeight; y++)
                 {
-                    blackPointCounter = 0;
-                    if (isBlack(x, y))
+                    Pixel pixel = new Pixel()
                     {
-                        checkTestFields(x, y);
-                        blackPointCounter = 0;
-                        checkTestEndings(x, y);
+                        point = new Point(x, y),
+                        color = this.bitmap.GetPixel(x, y)
+                    };
+
+                    if (isBlack(pixel.color))
+                    {
+                        crosscutFinder.checkTestField(pixel);
+                        endingFinder.checkTestField(pixel);
                     }
                     result.SetPixel(x, y, bitmap.GetPixel(x, y));
                 }
             }
-            Console.WriteLine("MinutiaCounter: " + minutiaCounter);
-            filterMinutias();
-            markCrosscuts();
-            markAllEndings();
-            Console.WriteLine("MinutiaCounter: " + crosscuts.Count);
+            result = crosscutFinder.getImageWithMarkMinutias(result);
+            result = endingFinder.getImageWithMarkMinutias(result);
+            return result;
         }
 
-        private void markAllEndings()
+        private bool isBlack(int x, int y)
         {
-            int size = endings.Count;
+            Color color = this.bitmap.GetPixel(x, y);
+            return isBlack(color);
+        }
 
-            for (int i = 0; i < endings.Count; i++)
+        private bool isBlack(Color color)
+        {
+            return color.R == 0 && color.G == 0 && color.B == 0;
+        }
+    }
+
+    
+
+    abstract class MinutiaFinder
+    {
+        protected Bitmap bitmap;
+        public Bitmap result;
+        protected int imgWidth;
+        protected int imgHeight;
+
+        protected List<Pixel> minutias;
+
+        protected int blackPointCounter;
+
+        protected Color minutiaColor;
+        
+        
+
+        protected MinutiaFinder(Bitmap bitmap)
+        {
+            this.bitmap = bitmap;
+            this.imgHeight = bitmap.Height;
+            this.imgWidth = bitmap.Width;
+            this.minutias = new List<Pixel>();
+        }
+
+        public abstract void checkTestField(Pixel pixel);
+
+        public virtual Bitmap getImageWithMarkMinutias(Bitmap result)
+        {
+            this.result = result;
+            foreach (Pixel pixel in minutias)
             {
-                Point p = endings[i];
-
-                markEndings(p.X, p.Y);
+                mark(pixel.point);
             }
+            return result;
         }
 
-        private void filterMinutias()
+        private void mark(Point point)
         {
-            int size = crosscuts.Count;
-            for (int i = 0; i < crosscuts.Count; i++)
-            {
-                Point firstPoint = crosscuts[i];
-                removePointIfExistsSimilarOne(firstPoint);
-            }
-        }
-
-        private void removePointIfExistsSimilarOne(Point firstPoint)
-        {
-            for (int j = 0; j < crosscuts.Count; j++)
-            {
-                Point secondPoint = crosscuts[j];
-                if (!firstPoint.Equals(secondPoint))
-                {
-                    double distance = countDistance(firstPoint, secondPoint);
-                    if (distance < 10.0)
-                    {
-                        crosscuts.Remove(secondPoint);
-                        removePointIfExistsSimilarOne(firstPoint);
-                        return;
-                    }
-                }
-            }
-        }
-
-        private void markCrosscuts()
-        {
-            foreach (Point point in crosscuts)
-            {
-                markCrosscut(point.X, point.Y);
-            }
-        }
-
-        private double countDistance(Point firstPoint, Point secondPoint)
-        {
-            double distance = 0;
-            double xPart = Math.Pow(secondPoint.X - firstPoint.X, 2);
-            double yPart = Math.Pow(secondPoint.Y - firstPoint.Y, 2);
-
-            distance = Math.Abs(Math.Sqrt(xPart + yPart));
-
-            return distance;
-        }
-
-        private void checkTestFields(int x, int y)
-        {
-            checkTestField(x, y, 5);
-            if (isCrosscut())
-            {
-                checkTestField(x, y, 9);
-
-                if (isCrosscut())
-                {
-                    crosscuts.Add(new Point(x, y));
-                    minutiaCounter++;
-                    return;
-                }
-            }
-        }
-
-        private void markCrosscut(int x, int y)
-        {
+            int x = point.X, y = point.Y;
             int envX, envY;
             int fieldWidth = 9;
             int counterDir = 4;
@@ -177,10 +150,9 @@ namespace ProjektBjometria
         {
             if (isPixelExists(envX, envY))
             {
-                isPixelSet[envX, envY] = true;
                 if (setPixel)
                 {
-                    result.SetPixel(envX, envY, Color.FromArgb(255, 0, 0));
+                    result.SetPixel(envX, envY, minutiaColor);
                 }
                 else
                 {
@@ -188,15 +160,67 @@ namespace ProjektBjometria
                 }
             }
         }
+        
 
-        private bool isCrosscut()
+        protected bool isBlack(int x, int y)
         {
-            return blackPointCounter == 3;
+            Color color = this.bitmap.GetPixel(x, y);
+            return isBlack(color);
         }
 
-        private void checkTestField(int x, int y, int fieldWidth)
+        protected bool isBlack(Color color)
+        {
+            return color.R == 0 && color.G == 0 && color.B == 0;
+        }
+
+        protected bool isNotBlack(int envX, int envY)
+        {
+            return !isBlack(envX, envY);
+        }
+
+        protected bool isPixelExists(int envX, int envY)
+        {
+            return envX >= 0 && envY >= 0 && envX < imgWidth && envY < imgHeight;
+        }
+
+        protected bool isWhite(int x, int y)
+        {
+            Color color = this.bitmap.GetPixel(x, y);
+            return color.R == 255 && color.G == 255 && color.B == 255;
+        }        
+
+    }
+
+    class CrosscutFinder : MinutiaFinder
+    {
+        private Color neighbour;
+
+        public CrosscutFinder(Bitmap bitmap) : base(bitmap)
+        {
+            this.minutiaColor = Color.FromArgb(255, 0, 0);
+        }
+
+        public override void checkTestField(Pixel pixel)
+        {
+            checkTestField(pixel, 5);
+            if (isCrosscut())
+            {
+                checkTestField(pixel, 9);
+
+                if (isCrosscut())
+                {
+                    minutias.Add(pixel);
+                    return;
+                }
+            }
+        }
+
+        private void checkTestField(Pixel pixel, int fieldWidth)
         {
             blackPointCounter = 0;
+            Point point = pixel.point;
+            int x = point.X;
+            int y = point.Y;
             int envX, envY;
             int counterDir = (fieldWidth - 1) / 2;
             int counter = 0;
@@ -231,18 +255,6 @@ namespace ProjektBjometria
             }
 
             counter = 0;
-
-        }
-
-        private bool isBlack(int x, int y)
-        {
-            Color color = this.bitmap.GetPixel(x, y);
-            return isBlack(color);
-        }
-
-        private bool isBlack(Color color)
-        {
-            return color.R == 0 && color.G == 0 && color.B == 0;
         }
 
         private void incrementCrosscutCounterIfPixelIsCorrect(int envX, int envY)
@@ -264,6 +276,105 @@ namespace ProjektBjometria
             }
         }
 
+        private bool isCrosscut()
+        {
+            return blackPointCounter == 3;
+        }
+
+        public override Bitmap getImageWithMarkMinutias(Bitmap result)
+        {
+            filterMinutias();
+            return base.getImageWithMarkMinutias(result);
+        }
+
+        private void filterMinutias()
+        {
+            int size = minutias.Count;
+            for (int i = 0; i < minutias.Count; i++)
+            {
+                Pixel firstPoint = minutias[i];
+                removePointIfExistsSimilarOne(firstPoint);
+            }
+        }
+
+        private void removePointIfExistsSimilarOne(Pixel firstPoint)
+        {
+            for (int j = 0; j < minutias.Count; j++)
+            {
+                Pixel secondPoint = minutias[j];
+                if (!firstPoint.Equals(secondPoint))
+                {
+                    double distance = countDistance(firstPoint.point, secondPoint.point);
+                    if (distance < 9.0)
+                    {
+                        minutias.Remove(secondPoint);
+                        removePointIfExistsSimilarOne(firstPoint);
+                        return;
+                    }
+                }
+            }
+        }
+
+        private double countDistance(Point firstPoint, Point secondPoint)
+        {
+            double distance = 0;
+            double xPart = Math.Pow(secondPoint.X - firstPoint.X, 2);
+            double yPart = Math.Pow(secondPoint.Y - firstPoint.Y, 2);
+
+            distance = Math.Abs(Math.Sqrt(xPart + yPart));
+
+            return distance;
+        }
+
+    }
+
+    class EndingFinder : MinutiaFinder
+    {
+        public EndingFinder(Bitmap bitmap) : base(bitmap)
+        {
+            this.minutiaColor = Color.FromArgb(0, 0, 255);
+        }
+
+        public override void checkTestField(Pixel pixel)
+        {
+            Point point = pixel.point;
+            blackPointCounter = 0;
+            checkEndings(point);
+            if (isEnding())
+            {
+                if (filterEndings(point))
+                {
+                    minutias.Add(pixel);
+                    return;
+                }
+            }
+        }
+
+        private void checkEndings(Point point)
+        {
+            int x = point.X, y = point.Y;
+            int envX, envY;
+            int counter = 0;
+
+            for (envX = x - 1, envY = y - 1; counter < 3; counter++, envY++)
+            {
+                incrementCounterIfPixelIsCorrect(envX, envY);
+            }
+            counter = 0;
+
+            for (envX = x + 1, envY = y - 1; counter < 3; counter++, envY++)
+            {
+                incrementCounterIfPixelIsCorrect(envX, envY);
+            }
+            counter = 0;
+
+            incrementCounterIfPixelIsCorrect(envX = x, envY = y - 1);
+
+
+            incrementCounterIfPixelIsCorrect(envX = x, envY = y + 1);
+
+        }
+
         private void incrementCounterIfPixelIsCorrect(int envX, int envY)
         {
             if (isPixelExists(envX, envY))
@@ -274,43 +385,15 @@ namespace ProjektBjometria
                 }
             }
         }
-
-        private bool isNotBlack(int envX, int envY)
+   
+        private bool isEnding()
         {
-            return !isBlack(envX, envY);
+            return blackPointCounter == 1;
         }
 
-        private bool isPixelExists(int envX, int envY)
+        private bool filterEndings(Point point)
         {
-            return envX >= 0 && envY >= 0 && envX < imgWidth && envY < imgHeight;
-        }
-
-        ////////Zakończenia
-
-        private void checkTestEndings(int x, int y)
-        {
-            checkEndings(x, y);
-            if (isEnding())
-            {
-                if (filterEndings(x, y))
-                {
-                    //markEndings(x, y);
-                    endings.Add(new Point(x, y));
-                    minutiaCounter++;
-                    return;
-                }
-            }
-            //result.SetPixel(x, y, bitmap.GetPixel(x, y));
-        }
-
-        private bool isWhite(int x, int y)
-        {
-            Color color = this.bitmap.GetPixel(x, y);
-            return color.R == 255 && color.G == 255 && color.B == 255;
-        }
-
-        private bool filterEndings(int x, int y)
-        {
+            int x = point.X, y = point.Y;
             int counter = 0, counter2 = 0;
             for (int i = x; i < imgWidth; i++)
             {
@@ -334,96 +417,31 @@ namespace ProjektBjometria
             else return true;
         }
 
-
-        private void markEndings(int x, int y)
-        {
-            int envX, envY;
-            int fieldWidth = 9;
-            int counterDir = 4;
-            int counter = 0;
-            markPixelIfExistsEndings(x, y, false);
-
-            for (envX = x - counterDir, envY = y - counterDir; counter < fieldWidth; counter++, envY++)
-            {
-                markPixelIfExistsEndings(envX, envY, true);
-            }
-
-            counter = 0;
-
-            for (envX = x + counterDir, envY = y - counterDir; counter < fieldWidth; counter++, envY++)
-            {
-                markPixelIfExistsEndings(envX, envY, true);
-            }
-
-            counter = 0;
-
-            for (envX = x - counterDir + 1, envY = y - counterDir; counter < (fieldWidth - 2);
-                counter++, envX++)
-            {
-                markPixelIfExistsEndings(envX, envY, true);
-            }
-
-            counter = 0;
-
-            for (envX = x - counterDir + 1, envY = y + counterDir; counter < (fieldWidth - 2);
-               counter++, envX++)
-            {
-                markPixelIfExistsEndings(envX, envY, true);
-            }
-
-            int counterX = 0, counterY = 0;
-            for (envX = x - 3; counterX < 7; envX++, counterX++)
-            {
-                for (envY = y - 3, counterY = 0; counterY < 7; envY++, counterY++)
-                {
-                    markPixelIfExistsEndings(envX, envY, false);
-                }
-            }
-        }
-        private void markPixelIfExistsEndings(int envX, int envY, Boolean setPixel)
-        {
-            if (isPixelExists(envX, envY))
-            {
-                isPixelSet[envX, envY] = true;
-                if (setPixel)
-                {
-                    result.SetPixel(envX, envY, Color.FromArgb(0, 0, 255));
-                }
-            }
-        }
-
-        private bool isEnding()
-        {
-            return blackPointCounter == 1;
-        }
-
-        private void checkEndings(int x, int y)
-        {
-            int envX, envY;
-            int counter = 0;
-
-
-
-            for (envX = x - 1, envY = y - 1; counter < 3; counter++, envY++)
-            {
-                incrementCounterIfPixelIsCorrect(envX, envY);
-            }
-            counter = 0;
-
-            for (envX = x + 1, envY = y - 1; counter < 3; counter++, envY++)
-            {
-                incrementCounterIfPixelIsCorrect(envX, envY);
-            }
-            counter = 0;
-
-            incrementCounterIfPixelIsCorrect(envX = x, envY = y - 1);
-
-
-            incrementCounterIfPixelIsCorrect(envX = x, envY = y + 1);
-
-        }
-
     }
 
+    class Pixel
+    {
+        public Point point { get; set; }
 
+        public Color color { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Pixel)
+            {
+                Pixel pi = (Pixel)obj;
+                Point p = pi.point;
+                return (p.X == this.point.X) && (p.Y == this.point.Y);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+    }
 }
