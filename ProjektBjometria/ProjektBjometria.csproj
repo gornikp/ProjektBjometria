@@ -113,17 +113,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomBitmapProcessing.cs" />
+    <Compile Include="MinutaiComponent\CrosscutFiner.cs" />
+    <Compile Include="MinutaiComponent\CustomBitmapProcessing.cs" />
+    <Compile Include="MinutaiComponent\EndingFinder.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="MinutiaFinder.cs" />
+    <Compile Include="MinutaiComponent\MinutiaFinder.cs" />
+    <Compile Include="MinutaiComponent\MinutiaManager.cs" />
+    <Compile Include="MinutaiComponent\Pixel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ThinningLibrary.cs" />
+    <Compile Include="MinutaiComponent\ThinningLibrary.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -194,6 +198,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

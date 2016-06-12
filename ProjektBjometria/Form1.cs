@@ -23,7 +23,7 @@ namespace ProjektBjometria
             }
             set
             {
-                picture = value;
+                picture = value;                
             }
         }
         private Bitmap picture;
